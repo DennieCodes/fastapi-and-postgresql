@@ -5,8 +5,6 @@ async def migrate():
 
     db_url = os.environ["DATABASE_URL"]
 
-    print("DB_URL", db_url)
-
     if len(sys.argv) < 2:
         print("Command: up|down [amount]")
         exit(1)
