@@ -33,13 +33,19 @@ class VacationRepository:
                     # Run our SELECT statement
                     result = db.execute(
                         """
-                        SELECT id, name, from_date, to_date, thoughts
+                        SELECT id
+                             , name
+                             , from_date
+                             , to_date
+                             , thoughts
                         FROM vacations
                         WHERE id = %s
                         """,
                         [vacation_id]
                     )
                     record = result.fetchone()
+                    if record is None:
+                        return None
                     return self.record_to_vacation_out(record)
         except Exception as e:
             print(e)

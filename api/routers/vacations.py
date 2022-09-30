@@ -48,6 +48,10 @@ def delete_vacation(
 @router.get("/vacations/{vacation_id}", response_model=Optional[VacationOut])
 def get_one_vacation(
     vacation_id: int,
+    response: Response,
     repo: VacationRepository = Depends(),
-) -> bool:
-    return repo.get_one(vacation_id)
+) -> VacationOut:
+    vacation = repo.get_one(vacation_id)
+    if vacation is None:
+        response.status_code = 404
+    return vacation
