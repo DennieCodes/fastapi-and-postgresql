@@ -127,7 +127,6 @@ class VacationRepository:
             print(e)
             return {"message": "Could not get all vacations"}
 
-
     def create(self, vacation: VacationIn) -> Union[VacationOut, Error]:
         try:
             # connect the database
