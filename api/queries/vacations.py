@@ -38,17 +38,17 @@ class VacationRepository:
             ORDER BY from_date;
             """
           )
-          result = []
-          for record in db:
-            vacation = VacationOut(
+
+          return [
+            VacationOut(
               id=record[0],
               name=record[1],
               from_date=record[2],
               to_date=record[3],
-              thoughts=record[4],
+              thoughts=record[4]
             )
-            result.append(vacation)
-          return result
+            for record in db
+          ]
     except Exception as e:
       print(e)
       return { "message": "Could not retrieve vacations" }
