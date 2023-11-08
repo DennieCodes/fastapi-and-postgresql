@@ -3,11 +3,6 @@ from typing import Optional, Union, List
 from datetime import date
 from queries.pool import pool
 
-# Example of more complicated modeling
-# class Thought(BaseModel):
-#   private_thoughts: str
-#   public_thoughts: str
-
 class Error(BaseModel):
   message: str
 
@@ -25,6 +20,36 @@ class VacationOut(BaseModel):
   thoughts: Optional[str]
 
 class VacationRepository:
+
+# UPDATE
+  def update(self, vacation_id: int, vacation: VacationIn) -> Union[VacationOut, Error]:
+    try:
+      with pool.connection() as conn:
+        with conn.cursor() as db:
+          db.execute(
+            """
+            UPDATE vacations
+            SET name = %s
+              , from_date = %s
+              , to_date = %s
+              , thoughts = %s
+            WHERE id = %s
+            """,[
+              vacation.name,
+              vacation.from_date,
+              vacation.to_date,
+              vacation.thoughts,
+              vacation_id
+            ]
+          )
+
+          return self.vacation_in_to_out(vacation_id, vacation)
+
+    except Exception as e:
+      print(e)
+      return { "message": "Could not update that vacations" }
+
+# GET ALL
   def get_all(self) -> Union[Error, List[VacationOut]]:
     try:
       with pool.connection() as conn:
@@ -40,19 +65,14 @@ class VacationRepository:
           )
 
           return [
-            VacationOut(
-              id=record[0],
-              name=record[1],
-              from_date=record[2],
-              to_date=record[3],
-              thoughts=record[4]
-            )
+            self.record_to_vacation_out(record)
             for record in db
           ]
     except Exception as e:
       print(e)
       return { "message": "Could not retrieve vacations" }
 
+# CREATE
   def create(self, vacation: VacationIn) -> VacationOut:
     # connect the database
     with pool.connection() as conn:
@@ -74,8 +94,60 @@ class VacationRepository:
             vacation.thoughts
           ]
         )
-        # Return new data
         id = result.fetchone()[0]
-        old_data = vacation.dict()
+        return self.vacation_in_to_out(id, vacation)
 
-        return VacationOut(id=id, **old_data)
+# DELETE
+  def delete(self, vacation_id: int) -> bool:
+    try:
+      with pool.connection() as conn:
+        with conn.cursor() as db:
+          db.execute(
+            """
+            DELETE from vacations
+            WHERE id = %s
+            """,
+            [vacation_id]
+          )
+          return True
+    except Exception as e:
+      print(e)
+      return False
+
+# GET_ONE
+  def get_one(self, vacation_id: int) -> Optional[VacationOut]:
+    try:
+      with pool.connection() as conn:
+        with conn.cursor() as db:
+          result = db.execute(
+            """
+            SELECT id
+                 , name
+                 , from_date
+                 , to_date
+                 , thoughts
+            FROM vacations
+            WHERE id = %s
+            """,
+            [vacation_id]
+          )
+          record = result.fetchone()
+          if record is None:
+            return None
+          return self.record_to_vacation_out(record)
+    except Exception as e:
+      print(e)
+      return { "message": "Could not get that vacation"}
+
+  def vacation_in_to_out(self, id: int, vacation: VacationIn):
+    old_data = vacation.dict()
+    return VacationOut(id=id, **old_data)
+
+  def record_to_vacation_out(self, record):
+    return VacationOut(
+      id=record[0],
+      name=record[1],
+      from_date=record[2],
+      to_date=record[3],
+      thoughts=record[4]
+    )
